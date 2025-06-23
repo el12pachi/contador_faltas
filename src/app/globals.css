@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+  --widthB: 10px;
+  --bgB: #60a5fa;
+  --brB: 5px;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gradient-border {
+  position: relative;
+  border-radius: 0.75rem;
+  background: linear-gradient(to right, #4f46e5, #06b6d4);
+  padding: 1px;
+}
+
+.gradient-border>div {
+  background: #1f2937;
+  border-radius: 0.75rem;
+}
+
+::-webkit-scrollbar {
+  width: var(--widthB);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--bgB);
+  border-radius: var(--brB);
+}
+
+::-moz-scrollbar {
+  width: var(--widthB);
+}
+
+::-moz-scrollbar-thumb {
+  background-color: var(--bgB);
+  border-radius: var(--brB);
+}
+
+::-ms-scrollbar {
+  width: var(--widthB);
+}
+
+::-ms-scrollbar-thumb {
+  background-color: var(--bgB);
+  border-radius: var(--brB);
+}
+
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

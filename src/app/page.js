@@ -328,6 +328,7 @@ export default function Home() {
                 asignaturas={asignaturas}
                 memoria={memoria}
                 cursoSeleccionado={cursoSeleccionado}
+                theme={theme}
               />
             )}
           </div>

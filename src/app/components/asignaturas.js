@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Book, BookOpen, ChevronDown, ChevronUp, Minus, Plus,
     Clock, AlertCircle, CheckCircle2, ArrowUpDown, ArrowUp, ArrowDown,
-    Search
+    Search, X
 } from 'lucide-react';
 
 export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, cursoSeleccionado, onAbsenceChange }) {
@@ -12,8 +12,59 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
     const [sortBy, setSortBy] = useState('nombre');
     const [sortOrder, setSortOrder] = useState('asc');
     const [searchQuery, setSearchQuery] = useState('');
+    const [notification, setNotification] = useState(null);
 
     const listAsignaturas = asignaturas || [];
+
+    // Componente de notificación
+    const NotificationToast = ({ message, type, onClose }) => {
+        React.useEffect(() => {
+            const timer = setTimeout(() => {
+                onClose();
+            }, 4000);
+            return () => clearTimeout(timer);
+        }, [onClose]);
+
+        return (
+            <div className={`fixed top-4 right-4 sm:right-6 z-[100] animate-fadeIn ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+            } rounded-lg shadow-xl border ${
+                type === 'error' 
+                    ? theme === 'dark' ? 'border-red-500/30' : 'border-red-200'
+                    : theme === 'dark' ? 'border-green-500/30' : 'border-green-200'
+            } p-4 min-w-[280px] max-w-[90vw] sm:max-w-md`}>
+                <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+                        type === 'error' ? 'bg-red-500' : 'bg-green-500'
+                    }`}>
+                        {type === 'error' ? (
+                            <AlertCircle className="w-3 h-3 text-white" />
+                        ) : (
+                            <CheckCircle2 className="w-3 h-3 text-white" />
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${
+                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>
+                            {message}
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                            theme === 'dark' 
+                                ? 'hover:bg-white/10 text-gray-400' 
+                                : 'hover:bg-gray-100 text-gray-500'
+                        }`}
+                        aria-label="Cerrar notificación"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     const subMenu = (id) => {
         setExpanded(data => {
@@ -27,7 +78,7 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
         });
     }
 
-    const updateAbsenceInDb = async (moduleId, action) => {
+    const updateAbsenceInDb = async (moduleId, action, previousValue) => {
         try {
             const response = await fetch('/api/absences', {
                 method: 'POST',
@@ -38,7 +89,7 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
             });
             const data = await response.json();
             if (data.success) {
-                // Actualizar memoria con los nuevos datos
+                // Actualizar memoria con los nuevos datos de la BD
                 if (data.absences) {
                     setMemoria(data.absences);
                 }
@@ -47,20 +98,64 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
                     onAbsenceChange();
                 }
             } else {
-                console.error('Error al actualizar falta en DB:', data.error);
+                // Revertir el cambio si hay error
+                setMemoria(prev => ({
+                    ...prev,
+                    [moduleId]: previousValue
+                }));
+                // Mostrar notificación de error
+                setNotification({
+                    message: action === 'add' 
+                        ? 'No se pudo agregar la falta. Inténtalo de nuevo.' 
+                        : 'No se pudo quitar la falta. Inténtalo de nuevo.',
+                    type: 'error'
+                });
             }
         } catch (error) {
             console.error('Error de red al actualizar falta:', error);
+            // Revertir el cambio si hay error de red
+            setMemoria(prev => ({
+                ...prev,
+                [moduleId]: previousValue
+            }));
+            // Mostrar notificación de error
+            setNotification({
+                message: action === 'add' 
+                    ? 'Error de conexión. No se pudo agregar la falta.' 
+                    : 'Error de conexión. No se pudo quitar la falta.',
+                type: 'error'
+            });
         }
     };
 
     const addFalta = (id) => {
-        updateAbsenceInDb(id, 'add');
+        // Guardar el valor anterior para poder revertir si hay error
+        const previousValue = memoria[id] || 0;
+        
+        // Actualización optimista: actualizar inmediatamente
+        setMemoria(prev => ({
+            ...prev,
+            [id]: (prev[id] || 0) + 1
+        }));
+        
+        // Llamar a la API en segundo plano
+        updateAbsenceInDb(id, 'add', previousValue);
     }
 
     const removeFalta = (id) => {
-        if ((memoria[id] || 0) > 0) {
-            updateAbsenceInDb(id, 'remove');
+        const currentValue = memoria[id] || 0;
+        if (currentValue > 0) {
+            // Guardar el valor anterior para poder revertir si hay error
+            const previousValue = currentValue;
+            
+            // Actualización optimista: actualizar inmediatamente
+            setMemoria(prev => ({
+                ...prev,
+                [id]: Math.max(0, (prev[id] || 0) - 1)
+            }));
+            
+            // Llamar a la API en segundo plano
+            updateAbsenceInDb(id, 'remove', previousValue);
         }
     }
 
@@ -155,13 +250,27 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
     };
 
     return (
-        <div className="space-y-4 w-full max-w-6xl mx-auto">
+        <>
+            {/* Notificación Toast */}
+            {notification && (
+                <NotificationToast
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
+            
+            <div className="space-y-4 w-full max-w-6xl mx-auto">
             {/* Header Compacto */}
             <div className="mb-4 sm:mb-5">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white mb-0.5">
+                <h1 className={`text-xl sm:text-2xl lg:text-3xl font-semibold mb-0.5 ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
                     Control de Asistencia
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-400/90">
+                <p className={`text-xs sm:text-sm ${
+                    theme === 'dark' ? 'text-gray-400/90' : 'text-gray-600'
+                }`}>
                     <span className="hidden sm:inline">{cursoSeleccionado}º curso • </span>
                     {asignaturasFiltradasPorCurso.length} materias • {totalHoras} horas totales
                 </p>
@@ -215,16 +324,28 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
             {/* Resumen compacto */}
             <div className="grid grid-cols-3 gap-2 sm:gap-2.5 mb-4">
                 <div className="glass-card rounded-md p-2.5 sm:p-3.5 text-center">
-                    <p className="text-xs text-gray-400/80 mb-1 sm:mb-1.5 font-medium">Faltas</p>
-                    <p className="text-lg sm:text-xl font-bold text-white">{allfatas()}</p>
+                    <p className={`text-xs mb-1 sm:mb-1.5 font-medium ${
+                        theme === 'dark' ? 'text-gray-400/80' : 'text-gray-600'
+                    }`}>Faltas</p>
+                    <p className={`text-lg sm:text-xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>{allfatas()}</p>
                 </div>
                 <div className="glass-card rounded-md p-2.5 sm:p-3.5 text-center">
-                    <p className="text-xs text-gray-400/80 mb-1 sm:mb-1.5 font-medium">Porcentaje</p>
-                    <p className="text-lg sm:text-xl font-bold text-white">{porcentajeHoras().toFixed(1)}%</p>
+                    <p className={`text-xs mb-1 sm:mb-1.5 font-medium ${
+                        theme === 'dark' ? 'text-gray-400/80' : 'text-gray-600'
+                    }`}>Porcentaje</p>
+                    <p className={`text-lg sm:text-xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>{porcentajeHoras().toFixed(1)}%</p>
                 </div>
                 <div className="glass-card rounded-md p-2.5 sm:p-3.5 text-center">
-                    <p className="text-xs text-gray-400/80 mb-1 sm:mb-1.5 font-medium">Materias</p>
-                    <p className="text-lg sm:text-xl font-bold text-white">{listAsignaturas.length}</p>
+                    <p className={`text-xs mb-1 sm:mb-1.5 font-medium ${
+                        theme === 'dark' ? 'text-gray-400/80' : 'text-gray-600'
+                    }`}>Materias</p>
+                    <p className={`text-lg sm:text-xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>{listAsignaturas.length}</p>
                 </div>
             </div>
 
@@ -240,115 +361,150 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
                     return (
                         <div
                             key={data.id}
-                            className="glass-card rounded-md p-3 sm:p-4 hover:bg-white/[0.06] transition-all duration-150"
-                            style={{ 
-                                marginTop: idx === 0 ? '0' : '0.5rem',
-                                borderRadius: idx % 2 === 0 ? '0.5rem' : '0.375rem'
-                            }}
+                            className={`glass-card rounded-lg p-3 sm:p-4 transition-all duration-150 ${
+                                theme === 'dark' ? 'hover:bg-white/[0.06]' : 'hover:bg-gray-50'
+                            }`}
                         >
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3.5">
-                                <div className="flex items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
-                                    {/* Icono pequeño */}
-                                    <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-md bg-gradient-to-br ${data.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                                        <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            <div className="flex items-start sm:items-center gap-3">
+                                {/* Icono */}
+                                <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-gradient-to-br ${data.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                                </div>
+
+                                {/* Contenido principal */}
+                                <div className="flex-1 min-w-0">
+                                    {/* Header con nombre y contador de faltas */}
+                                    <div className="flex items-start sm:items-center justify-between gap-2 mb-2">
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className={`text-sm sm:text-base font-semibold mb-1 truncate ${
+                                                theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                            }`}>
+                                                {data.nombre}
+                                            </h3>
+                                            <div className={`flex items-center gap-2 text-xs ${
+                                                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                                            }`}>
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className={`w-3 h-3 ${theme === 'dark' ? 'opacity-80' : 'opacity-70'}`} />
+                                                    {data.horas}h
+                                                </span>
+                                                <span className={`${theme === 'dark' ? 'opacity-50' : 'opacity-40'}`}>•</span>
+                                                <span>{Math.trunc(data.horas / 33)}h/sem</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Contador de faltas más compacto */}
+                                        <div className={`flex items-baseline gap-1 px-2.5 py-1.5 rounded-lg ${status.bg} ${status.border} border flex-shrink-0`}>
+                                            <span className={`text-sm font-semibold ${status.color}`}>
+                                                {faltasActuales}
+                                            </span>
+                                            <span className={`text-xs ${status.color} opacity-70`}>
+                                                /{maxFaltas}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    {/* Información principal */}
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-sm font-semibold text-white mb-0.5 truncate leading-tight">
-                                            {data.nombre}
-                                        </h3>
-                                        <div className="flex items-center gap-2 sm:gap-2.5 text-xs text-gray-400/90">
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="w-3 h-3 opacity-80" />
-                                                {data.horas}h
-                                            </span>
-                                            <span className="opacity-50 hidden sm:inline">•</span>
-                                            <span className="hidden sm:inline">{Math.trunc(data.horas / 33)}h/sem</span>
+                                    {/* Barra de progreso y botones en la misma línea */}
+                                    <div className="flex items-center gap-2">
+                                        {/* Barra de progreso */}
+                                        <div className="flex-1 flex items-center gap-2 min-w-0">
+                                            <div className={`flex-1 h-2 rounded-full overflow-hidden ${
+                                                theme === 'dark' ? 'bg-white/[0.08]' : 'bg-gray-200'
+                                            }`}>
+                                                <div
+                                                    className={`h-full rounded-full bg-gradient-to-r ${status.progress} transition-all duration-400`}
+                                                    style={{ width: `${Math.min(porcentaje, 100)}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                <StatusIcon className={`w-3.5 h-3.5 ${status.color} opacity-90`} />
+                                                <span className={`text-xs font-semibold ${status.color} min-w-[2.5rem]`}>
+                                                    {porcentaje.toFixed(0)}%
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Botones */}
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                            <button
+                                                onClick={() => removeFalta(data.id)}
+                                                disabled={faltasActuales === 0}
+                                                className={`w-8 h-8 rounded-md disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-95 ${
+                                                    theme === 'dark'
+                                                        ? 'bg-white/[0.06] hover:bg-white/10'
+                                                        : 'bg-gray-100 hover:bg-gray-200'
+                                                }`}
+                                                aria-label="Quitar falta"
+                                            >
+                                                <Minus className={`w-3.5 h-3.5 ${
+                                                    theme === 'dark' ? 'text-white/90' : 'text-gray-700'
+                                                }`} />
+                                            </button>
+                                            <button
+                                                onClick={() => addFalta(data.id)}
+                                                className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all active:scale-95 shadow-sm"
+                                                aria-label="Agregar falta"
+                                            >
+                                                <Plus className="w-3.5 h-3.5 text-white" />
+                                            </button>
+                                            <button
+                                                onClick={() => subMenu(data.id)}
+                                                className={`w-8 h-8 rounded-md flex items-center justify-center transition-all active:scale-95 sm:hidden ${
+                                                    theme === 'dark'
+                                                        ? 'bg-white/[0.06] hover:bg-white/10'
+                                                        : 'bg-gray-100 hover:bg-gray-200'
+                                                }`}
+                                                aria-label="Ver detalles"
+                                            >
+                                                {expanded.has(data.id) ? (
+                                                    <ChevronUp className={`w-3.5 h-3.5 ${
+                                                        theme === 'dark' ? 'text-white/80' : 'text-gray-700'
+                                                    }`} />
+                                                ) : (
+                                                    <ChevronDown className={`w-3.5 h-3.5 ${
+                                                        theme === 'dark' ? 'text-white/80' : 'text-gray-700'
+                                                    }`} />
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Contador y botones - Móvil: en fila, Desktop: en columna */}
-                                <div className="flex sm:flex-col items-center gap-2 sm:gap-1.5">
-                                    {/* Contador de faltas compacto */}
-                                    <div className={`text-center px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-md border ${status.bg} ${status.border} min-w-[70px] sm:min-w-[72px]`}>
-                                        <p className={`text-base sm:text-lg font-bold ${status.color} leading-none`}>
-                                            {faltasActuales}
-                                        </p>
-                                        <p className="text-xs text-gray-400/70 mt-0.5">
-                                            / {maxFaltas}
-                                        </p>
-                                    </div>
-
-                                    {/* Botones compactos */}
-                                    <div className="flex items-center gap-1.5">
-                                        <button
-                                            onClick={() => removeFalta(data.id)}
-                                            disabled={faltasActuales === 0}
-                                            className="w-9 h-9 sm:w-8 sm:h-8 rounded-md bg-white/[0.04] hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-95 touch-manipulation"
-                                            aria-label="Quitar falta"
-                                        >
-                                            <Minus className="w-4 h-4 text-white/90" />
-                                        </button>
-                                        <button
-                                            onClick={() => addFalta(data.id)}
-                                            className="w-9 h-9 sm:w-8 sm:h-8 rounded-md bg-blue-500/90 hover:bg-blue-500 flex items-center justify-center transition-all active:scale-95 shadow-sm touch-manipulation"
-                                            aria-label="Agregar falta"
-                                        >
-                                            <Plus className="w-4 h-4 text-white" />
-                                        </button>
-                                        <button
-                                            onClick={() => subMenu(data.id)}
-                                            className="w-9 h-9 sm:w-8 sm:h-8 rounded-md bg-white/[0.04] hover:bg-white/10 flex items-center justify-center transition-all active:scale-95 touch-manipulation sm:hidden"
-                                            aria-label="Ver detalles"
-                                        >
-                                            {expanded.has(data.id) ? (
-                                                <ChevronUp className="w-4 h-4 text-white/80" />
-                                            ) : (
-                                                <ChevronDown className="w-4 h-4 text-white/80" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
 
-                            {/* Barra de progreso compacta */}
-                            <div className="mt-3 pt-3 border-t border-white/8">
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-xs text-gray-400/80 font-medium">Progreso</span>
-                                    <div className="flex items-center gap-1.5">
-                                        <StatusIcon className={`w-3.5 h-3.5 ${status.color} opacity-90`} />
-                                        <span className={`text-xs font-semibold ${status.color}`}>
-                                            {porcentaje.toFixed(0)}%
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="w-full h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full bg-gradient-to-r ${status.progress} transition-all duration-400`}
-                                        style={{ width: `${Math.min(porcentaje, 100)}%` }}
-                                    />
-                                </div>
-                            </div>
 
                             {/* Detalles expandidos */}
                             {expanded.has(data.id) && (
-                                <div className="mt-3 pt-3 border-t border-white/8 grid grid-cols-2 gap-3 sm:gap-3">
+                                <div className={`mt-3 pt-3 border-t grid grid-cols-2 gap-3 sm:gap-3 ${
+                                    theme === 'dark' ? 'border-white/8' : 'border-gray-200'
+                                }`}>
                                     <div>
-                                        <p className="text-xs text-gray-400/80 mb-1 font-medium">Horas totales</p>
-                                        <p className="text-sm font-semibold text-white">{data.horas}h</p>
+                                        <p className={`text-xs mb-1 font-medium ${
+                                            theme === 'dark' ? 'text-gray-400/80' : 'text-gray-600'
+                                        }`}>Horas totales</p>
+                                        <p className={`text-sm font-semibold ${
+                                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                        }`}>{data.horas}h</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-400/80 mb-1 font-medium">Horas semanales</p>
-                                        <p className="text-sm font-semibold text-white">{Math.trunc(data.horas / 33)}h</p>
+                                        <p className={`text-xs mb-1 font-medium ${
+                                            theme === 'dark' ? 'text-gray-400/80' : 'text-gray-600'
+                                        }`}>Horas semanales</p>
+                                        <p className={`text-sm font-semibold ${
+                                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                        }`}>{Math.trunc(data.horas / 33)}h</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-400/80 mb-1 font-medium">Máximo permitido</p>
-                                        <p className="text-sm font-semibold text-white">{maxFaltas}h</p>
+                                        <p className={`text-xs mb-1 font-medium ${
+                                            theme === 'dark' ? 'text-gray-400/80' : 'text-gray-600'
+                                        }`}>Máximo permitido</p>
+                                        <p className={`text-sm font-semibold ${
+                                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                        }`}>{maxFaltas}h</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-400/80 mb-1 font-medium">Horas restantes</p>
+                                        <p className={`text-xs mb-1 font-medium ${
+                                            theme === 'dark' ? 'text-gray-400/80' : 'text-gray-600'
+                                        }`}>Horas restantes</p>
                                         <p className={`text-sm font-semibold ${status.color}`}>
                                             {Math.max(0, maxFaltas - faltasActuales)}h
                                         </p>
@@ -362,9 +518,10 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
 
             {filteredAndSorted.length === 0 && (
                 <div className="glass-card rounded-lg p-8 text-center">
-                    <p className="text-gray-400">No se encontraron materias</p>
+                    <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>No se encontraron materias</p>
                 </div>
             )}
-        </div>
+            </div>
+        </>
     );
 }

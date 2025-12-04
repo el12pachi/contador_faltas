@@ -3,7 +3,7 @@
 import React from 'react';
 import { 
     User, Settings, Moon, Sun, Book, BarChart3, 
-    X, Menu, Home, LogOut, ChevronLeft, ArrowLeft
+    X, Menu, Home, LogOut, ChevronLeft, ChevronRight, ArrowLeft
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 
@@ -125,10 +125,16 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                                             w-full flex items-center gap-3 px-4 py-3 rounded-xl
                                             transition-all duration-200
                                             ${!cursoSeleccionado 
-                                                ? 'opacity-50 cursor-not-allowed text-gray-600' 
+                                                ? theme === 'dark'
+                                                    ? 'opacity-50 cursor-not-allowed text-gray-400'
+                                                    : 'opacity-50 cursor-not-allowed text-gray-400'
                                                 : isActive 
-                                                    ? 'bg-white/10 text-white shadow-lg' 
-                                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                                    ? theme === 'dark'
+                                                        ? 'bg-white/10 text-white shadow-lg'
+                                                        : 'bg-blue-500 text-white shadow-lg'
+                                                    : theme === 'dark'
+                                                        ? 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                                             }
                                         `}
                                     >
@@ -141,21 +147,29 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                     )}
 
                     {/* Settings Section */}
-                    <div className="border-t border-white/10 pt-6 space-y-2">
+                    <div className={`border-t pt-6 space-y-2 ${
+                        theme === 'dark' ? 'border-white/10' : 'border-gray-200'
+                    }`}>
                         {/* Theme Toggle */}
                         <button
                             onClick={onThemeChange}
-                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group`}
+                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl transition-colors group ${
+                                theme === 'dark'
+                                    ? 'bg-white/5 hover:bg-white/10'
+                                    : 'bg-gray-100 hover:bg-gray-200'
+                            }`}
                             title={sidebarCollapsed ? (theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro') : ''}
                         >
                             <div className="flex items-center gap-3">
                                 {theme === 'dark' ? (
-                                    <Moon className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                                    <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400 group-hover:text-white' : 'text-gray-600 group-hover:text-gray-900'}`} />
                                 ) : (
-                                    <Sun className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                                    <Sun className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400 group-hover:text-white' : 'text-gray-600 group-hover:text-gray-900'}`} />
                                 )}
                                 {!sidebarCollapsed && (
-                                    <span className="font-medium text-gray-400 group-hover:text-white">
+                                    <span className={`font-medium ${
+                                        theme === 'dark' ? 'text-gray-400 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'
+                                    }`}>
                                         {theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro'}
                                     </span>
                                 )}
@@ -163,7 +177,7 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                             {!sidebarCollapsed && (
                                 <div className={`
                                     w-12 h-6 rounded-full p-1 transition-colors
-                                    ${theme === 'dark' ? 'bg-blue-500' : 'bg-gray-600'}
+                                    ${theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}
                                 `}>
                                     <div className={`
                                         w-4 h-4 rounded-full bg-white transition-transform
@@ -175,14 +189,20 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
 
                         {/* Profile */}
                         <button 
-                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors`}
+                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl transition-colors ${
+                                theme === 'dark'
+                                    ? 'bg-white/5 hover:bg-white/10'
+                                    : 'bg-gray-100 hover:bg-gray-200'
+                            }`}
                             title={sidebarCollapsed ? userName : ''}
                         >
                             {userImage ? (
                                 <img 
                                     src={userImage} 
                                     alt={userName}
-                                    className="w-8 h-8 rounded-full object-cover border-2 border-white/20"
+                                    className={`w-8 h-8 rounded-full object-cover border-2 ${
+                                        theme === 'dark' ? 'border-white/20' : 'border-gray-300'
+                                    }`}
                                 />
                             ) : (
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
@@ -190,7 +210,9 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                                 </div>
                             )}
                             {!sidebarCollapsed && (
-                                <span className="font-medium text-gray-400 hover:text-white truncate flex-1 text-left">
+                                <span className={`font-medium truncate flex-1 text-left ${
+                                    theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-700 hover:text-gray-900'
+                                }`}>
                                     {userName}
                                 </span>
                             )}
@@ -199,12 +221,20 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                         {/* Logout */}
                         <button 
                             onClick={() => signOut({ callbackUrl: '/login' })}
-                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-colors group`}
+                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl transition-colors group ${
+                                theme === 'dark'
+                                    ? 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/30'
+                                    : 'bg-red-50 hover:bg-red-100 border border-red-200'
+                            }`}
                             title={sidebarCollapsed ? 'Cerrar Sesión' : ''}
                         >
-                            <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-300" />
+                            <LogOut className={`w-5 h-5 ${
+                                theme === 'dark' ? 'text-red-400 group-hover:text-red-300' : 'text-red-600 group-hover:text-red-700'
+                            }`} />
                             {!sidebarCollapsed && (
-                                <span className="font-medium text-red-400 group-hover:text-red-300">Cerrar Sesión</span>
+                                <span className={`font-medium ${
+                                    theme === 'dark' ? 'text-red-400 group-hover:text-red-300' : 'text-red-600 group-hover:text-red-700'
+                                }`}>Cerrar Sesión</span>
                             )}
                         </button>
                     </div>

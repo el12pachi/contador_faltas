@@ -7,13 +7,13 @@ import {
     Search
 } from 'lucide-react';
 
-export default function Asignaturas({ memoria, setMemoria, theme, asignaturas }) {
+export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, cursoSeleccionado, onAbsenceChange }) {
     const [expanded, setExpanded] = useState(new Set());
     const [sortBy, setSortBy] = useState('nombre');
     const [sortOrder, setSortOrder] = useState('asc');
     const [searchQuery, setSearchQuery] = useState('');
-    
-    const [listAsignaturas] = useState(asignaturas || []);
+
+    const listAsignaturas = asignaturas || [];
 
     const subMenu = (id) => {
         setExpanded(data => {
@@ -27,17 +27,40 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas })
         });
     }
 
+    const updateAbsenceInDb = async (moduleId, action) => {
+        try {
+            const response = await fetch('/api/absences', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ moduleId, action }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                // Actualizar memoria con los nuevos datos
+                if (data.absences) {
+                    setMemoria(data.absences);
+                }
+                // Llamar al callback para recargar si es necesario
+                if (onAbsenceChange) {
+                    onAbsenceChange();
+                }
+            } else {
+                console.error('Error al actualizar falta en DB:', data.error);
+            }
+        } catch (error) {
+            console.error('Error de red al actualizar falta:', error);
+        }
+    };
+
     const addFalta = (id) => {
-        const newMemoria = { ...memoria, [id]: (memoria[id] || 0) + 1 };
-        setMemoria(newMemoria);
-        localStorage.setItem('asignaturas', JSON.stringify(newMemoria));
+        updateAbsenceInDb(id, 'add');
     }
 
     const removeFalta = (id) => {
         if ((memoria[id] || 0) > 0) {
-            const newMemoria = { ...memoria, [id]: (memoria[id] || 0) - 1 };
-            setMemoria(newMemoria);
-            localStorage.setItem('asignaturas', JSON.stringify(newMemoria));
+            updateAbsenceInDb(id, 'remove');
         }
     }
 
@@ -79,7 +102,11 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas })
         };
     }
 
-    const filteredAndSorted = listAsignaturas
+    const asignaturasFiltradasPorCurso = listAsignaturas.filter(asig =>
+        cursoSeleccionado ? asig.curso === cursoSeleccionado : true
+    );
+
+    const filteredAndSorted = asignaturasFiltradasPorCurso
         .filter(asig => 
             asig.nombre.toLowerCase().includes(searchQuery.toLowerCase())
         )
@@ -114,7 +141,7 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas })
         }
     };
 
-    const totalHoras = listAsignaturas.reduce((total, data) => total + data.horas, 0);
+    const totalHoras = asignaturasFiltradasPorCurso.reduce((total, data) => total + data.horas, 0);
     const allfatas = () => {
         let sum = 0;
         for (const value in memoria) {
@@ -130,42 +157,55 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas })
     return (
         <div className="space-y-4 w-full max-w-6xl mx-auto">
             {/* Header Compacto */}
-            <div className="mb-5">
-                <h1 className="text-2xl lg:text-3xl font-semibold text-white mb-0.5">
+            <div className="mb-4 sm:mb-5">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white mb-0.5">
                     Control de Asistencia
                 </h1>
-                <p className="text-sm text-gray-400/90">
-                    {listAsignaturas.length} materias • {totalHoras} horas totales
+                <p className="text-xs sm:text-sm text-gray-400/90">
+                    <span className="hidden sm:inline">{cursoSeleccionado}º curso • </span>
+                    {asignaturasFiltradasPorCurso.length} materias • {totalHoras} horas totales
                 </p>
             </div>
 
             {/* Barra de búsqueda y ordenamiento compacta */}
             <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
                 <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400/80" />
+                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                        theme === 'dark' ? 'text-gray-400/80' : 'text-gray-500'
+                    }`} />
                     <input
                         type="text"
                         placeholder="Buscar materia..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 text-sm rounded-md bg-white/[0.06] border border-white/8 text-white placeholder-gray-500/70 focus:outline-none focus:border-blue-500/40 focus:bg-white/[0.08] transition-colors"
+                        className={`w-full pl-9 pr-3 py-2.5 text-sm rounded-md border transition-colors ${
+                            theme === 'dark'
+                                ? 'bg-white/[0.06] border-white/8 text-white placeholder-gray-500/70 focus:border-blue-500/40 focus:bg-white/[0.08]'
+                                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                        } focus:outline-none`}
                     />
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5 overflow-x-auto pb-1 -mb-1 sm:pb-0 sm:mb-0">
                     {['nombre', 'faltas', 'progreso'].map((sort, idx) => (
                         <button
                             key={sort}
                             onClick={() => handleSort(sort)}
-                            className={`px-3 py-2 text-xs rounded-md transition-all capitalize font-medium ${
+                            className={`px-2.5 sm:px-3 py-2 text-xs rounded-md transition-all capitalize font-medium whitespace-nowrap flex items-center gap-1.5 min-w-fit ${
                                 sortBy === sort 
-                                    ? 'bg-white/12 text-white shadow-sm' 
-                                    : 'bg-white/[0.04] text-gray-400 hover:bg-white/8 hover:text-white/90'
+                                    ? theme === 'dark'
+                                        ? 'bg-white/12 text-white shadow-sm'
+                                        : 'bg-blue-500 text-white shadow-sm'
+                                    : theme === 'dark'
+                                        ? 'bg-white/[0.04] text-gray-400 hover:bg-white/8 hover:text-white/90'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
-                            style={{ marginLeft: idx === 0 ? '0' : '0' }}
                         >
-                            {sort}
+                            <span className="hidden sm:inline">{sort}</span>
+                            <span className="sm:hidden">
+                                {sort === 'nombre' ? 'Nom' : sort === 'faltas' ? 'Fal' : 'Pro'}
+                            </span>
                             {sortBy === sort && (
-                                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 inline ml-1.5" /> : <ArrowDown className="w-3 h-3 inline ml-1.5" />
+                                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                             )}
                         </button>
                     ))}
@@ -173,18 +213,18 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas })
             </div>
 
             {/* Resumen compacto */}
-            <div className="grid grid-cols-3 gap-2.5 mb-4">
-                <div className="glass-card rounded-md p-3.5 text-center">
-                    <p className="text-xs text-gray-400/80 mb-1.5 font-medium">Faltas</p>
-                    <p className="text-xl font-bold text-white">{allfatas()}</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-2.5 mb-4">
+                <div className="glass-card rounded-md p-2.5 sm:p-3.5 text-center">
+                    <p className="text-xs text-gray-400/80 mb-1 sm:mb-1.5 font-medium">Faltas</p>
+                    <p className="text-lg sm:text-xl font-bold text-white">{allfatas()}</p>
                 </div>
-                <div className="glass-card rounded-md p-3.5 text-center">
-                    <p className="text-xs text-gray-400/80 mb-1.5 font-medium">Porcentaje</p>
-                    <p className="text-xl font-bold text-white">{porcentajeHoras().toFixed(1)}%</p>
+                <div className="glass-card rounded-md p-2.5 sm:p-3.5 text-center">
+                    <p className="text-xs text-gray-400/80 mb-1 sm:mb-1.5 font-medium">Porcentaje</p>
+                    <p className="text-lg sm:text-xl font-bold text-white">{porcentajeHoras().toFixed(1)}%</p>
                 </div>
-                <div className="glass-card rounded-md p-3.5 text-center">
-                    <p className="text-xs text-gray-400/80 mb-1.5 font-medium">Materias</p>
-                    <p className="text-xl font-bold text-white">{listAsignaturas.length}</p>
+                <div className="glass-card rounded-md p-2.5 sm:p-3.5 text-center">
+                    <p className="text-xs text-gray-400/80 mb-1 sm:mb-1.5 font-medium">Materias</p>
+                    <p className="text-lg sm:text-xl font-bold text-white">{listAsignaturas.length}</p>
                 </div>
             </div>
 
@@ -200,71 +240,77 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas })
                     return (
                         <div
                             key={data.id}
-                            className="glass-card rounded-md p-4 hover:bg-white/[0.06] transition-all duration-150"
+                            className="glass-card rounded-md p-3 sm:p-4 hover:bg-white/[0.06] transition-all duration-150"
                             style={{ 
                                 marginTop: idx === 0 ? '0' : '0.5rem',
                                 borderRadius: idx % 2 === 0 ? '0.5rem' : '0.375rem'
                             }}
                         >
-                            <div className="flex items-center gap-3.5">
-                                {/* Icono pequeño */}
-                                <div className={`w-11 h-11 rounded-md bg-gradient-to-br ${data.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                                    <BookOpen className="w-5 h-5 text-white" />
-                                </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3.5">
+                                <div className="flex items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
+                                    {/* Icono pequeño */}
+                                    <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-md bg-gradient-to-br ${data.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                                        <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                                    </div>
 
-                                {/* Información principal */}
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-sm font-semibold text-white mb-0.5 truncate leading-tight">
-                                        {data.nombre}
-                                    </h3>
-                                    <div className="flex items-center gap-2.5 text-xs text-gray-400/90">
-                                        <span className="flex items-center gap-1">
-                                            <Clock className="w-3 h-3 opacity-80" />
-                                            {data.horas}h
-                                        </span>
-                                        <span className="opacity-50">•</span>
-                                        <span>{Math.trunc(data.horas / 33)}h/sem</span>
+                                    {/* Información principal */}
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-sm font-semibold text-white mb-0.5 truncate leading-tight">
+                                            {data.nombre}
+                                        </h3>
+                                        <div className="flex items-center gap-2 sm:gap-2.5 text-xs text-gray-400/90">
+                                            <span className="flex items-center gap-1">
+                                                <Clock className="w-3 h-3 opacity-80" />
+                                                {data.horas}h
+                                            </span>
+                                            <span className="opacity-50 hidden sm:inline">•</span>
+                                            <span className="hidden sm:inline">{Math.trunc(data.horas / 33)}h/sem</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Contador de faltas compacto */}
-                                <div className={`text-center px-3.5 py-2.5 rounded-md border ${status.bg} ${status.border} min-w-[72px]`}>
-                                    <p className={`text-lg font-bold ${status.color} leading-none`}>
-                                        {faltasActuales}
-                                    </p>
-                                    <p className="text-xs text-gray-400/70 mt-0.5">
-                                        / {maxFaltas}
-                                    </p>
-                                </div>
+                                {/* Contador y botones - Móvil: en fila, Desktop: en columna */}
+                                <div className="flex sm:flex-col items-center gap-2 sm:gap-1.5">
+                                    {/* Contador de faltas compacto */}
+                                    <div className={`text-center px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-md border ${status.bg} ${status.border} min-w-[70px] sm:min-w-[72px]`}>
+                                        <p className={`text-base sm:text-lg font-bold ${status.color} leading-none`}>
+                                            {faltasActuales}
+                                        </p>
+                                        <p className="text-xs text-gray-400/70 mt-0.5">
+                                            / {maxFaltas}
+                                        </p>
+                                    </div>
 
-                                {/* Botones compactos */}
-                                <div className="flex items-center gap-1.5">
-                                    <button
-                                        onClick={() => removeFalta(data.id)}
-                                        disabled={faltasActuales === 0}
-                                        className="w-8 h-8 rounded-md bg-white/[0.04] hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-95"
-                                    >
-                                        <Minus className="w-4 h-4 text-white/90" />
-                                    </button>
-                                    <button
-                                        onClick={() => addFalta(data.id)}
-                                        className="w-8 h-8 rounded-md bg-blue-500/90 hover:bg-blue-500 flex items-center justify-center transition-all active:scale-95 shadow-sm"
-                                    >
-                                        <Plus className="w-4 h-4 text-white" />
-                                    </button>
+                                    {/* Botones compactos */}
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            onClick={() => removeFalta(data.id)}
+                                            disabled={faltasActuales === 0}
+                                            className="w-9 h-9 sm:w-8 sm:h-8 rounded-md bg-white/[0.04] hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-95 touch-manipulation"
+                                            aria-label="Quitar falta"
+                                        >
+                                            <Minus className="w-4 h-4 text-white/90" />
+                                        </button>
+                                        <button
+                                            onClick={() => addFalta(data.id)}
+                                            className="w-9 h-9 sm:w-8 sm:h-8 rounded-md bg-blue-500/90 hover:bg-blue-500 flex items-center justify-center transition-all active:scale-95 shadow-sm touch-manipulation"
+                                            aria-label="Agregar falta"
+                                        >
+                                            <Plus className="w-4 h-4 text-white" />
+                                        </button>
+                                        <button
+                                            onClick={() => subMenu(data.id)}
+                                            className="w-9 h-9 sm:w-8 sm:h-8 rounded-md bg-white/[0.04] hover:bg-white/10 flex items-center justify-center transition-all active:scale-95 touch-manipulation sm:hidden"
+                                            aria-label="Ver detalles"
+                                        >
+                                            {expanded.has(data.id) ? (
+                                                <ChevronUp className="w-4 h-4 text-white/80" />
+                                            ) : (
+                                                <ChevronDown className="w-4 h-4 text-white/80" />
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
-
-                                {/* Botón expandir */}
-                                <button
-                                    onClick={() => subMenu(data.id)}
-                                    className="w-8 h-8 rounded-md bg-white/[0.04] hover:bg-white/10 flex items-center justify-center transition-all active:scale-95"
-                                >
-                                    {expanded.has(data.id) ? (
-                                        <ChevronUp className="w-4 h-4 text-white/80" />
-                                    ) : (
-                                        <ChevronDown className="w-4 h-4 text-white/80" />
-                                    )}
-                                </button>
                             </div>
 
                             {/* Barra de progreso compacta */}
@@ -288,7 +334,7 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas })
 
                             {/* Detalles expandidos */}
                             {expanded.has(data.id) && (
-                                <div className="mt-3 pt-3 border-t border-white/8 grid grid-cols-2 gap-3">
+                                <div className="mt-3 pt-3 border-t border-white/8 grid grid-cols-2 gap-3 sm:gap-3">
                                     <div>
                                         <p className="text-xs text-gray-400/80 mb-1 font-medium">Horas totales</p>
                                         <p className="text-sm font-semibold text-white">{data.horas}h</p>

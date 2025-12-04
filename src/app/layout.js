@@ -1,5 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { getSession } from "./functions/sessionServer";
+import LoginPage from "./components/login/Login";
+import SessionProvider from "./providers/SessionProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +21,22 @@ export const metadata = {
   description: "Gestiona y monitorea tus faltas de asistencia de manera sencilla y elegante",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const session = await getSession();
+
+  if (session?.login || !session.token || !session.email) {
+    return (
+      <html lang="es" className="scroll-smooth dark" data-theme="dark">
+        <head>
+          <link rel="icon" href="/favicon.ico" sizes="any" />
+        </head>
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans dark`}>
+          <LoginPage />
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="es" className="scroll-smooth dark" data-theme="dark">
       <head>
@@ -27,7 +45,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans dark`}
       >
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@
 import React from 'react';
 import { TrendingUp, Clock, AlertCircle, CheckCircle2, BarChart3 } from 'lucide-react';
 
-export default function StatsPanel({ asignaturas, memoria }) {
+export default function StatsPanel({ asignaturas, memoria, cursoSeleccionado }) {
     const allfatas = () => {
         let sum = 0;
         for (const value in memoria) {
@@ -12,7 +12,11 @@ export default function StatsPanel({ asignaturas, memoria }) {
         return sum;
     };
 
-    const totalHoras = asignaturas.reduce((total, data) => total + data.horas, 0);
+    const asignaturasFiltradas = cursoSeleccionado
+        ? asignaturas.filter(a => a.curso === cursoSeleccionado)
+        : asignaturas;
+
+    const totalHoras = asignaturasFiltradas.reduce((total, data) => total + data.horas, 0);
     const totalFaltas = allfatas();
     const porcentajeTotal = totalHoras > 0 ? (totalFaltas * 100) / totalHoras : 0;
 
@@ -22,7 +26,7 @@ export default function StatsPanel({ asignaturas, memoria }) {
         return { color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: CheckCircle2, label: 'Bien' };
     };
 
-    const materiasConFaltas = asignaturas.map(data => {
+    const materiasConFaltas = asignaturasFiltradas.map(data => {
         const faltasActuales = memoria[data.id] || 0;
         const maxFaltas = Math.trunc(data.horas * 0.15);
         const porcentaje = maxFaltas > 0 ? (faltasActuales / maxFaltas) * 100 : 0;

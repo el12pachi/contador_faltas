@@ -143,7 +143,7 @@ export default function Home() {
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-300 ${
       theme === 'dark' 
-        ? 'bg-[#000000] text-white' 
+        ? 'bg-[#0a0a0f] text-white' 
         : 'bg-gray-50 text-gray-900'
     }`}>
       {/* Sidebar - Siempre visible */}
@@ -166,7 +166,7 @@ export default function Home() {
         {/* Top Bar - Only on mobile */}
         <div className={`lg:hidden flex-shrink-0 backdrop-blur-xl border-b px-4 py-3 transition-colors duration-300 ${
           theme === 'dark'
-            ? 'bg-[#111827]/95 border-white/10'
+            ? 'bg-[#13131a]/95 border-white/8 backdrop-saturate-150'
             : 'bg-white/95 border-gray-200'
         }`}>
           <div className="flex items-center justify-between">

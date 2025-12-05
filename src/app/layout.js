@@ -17,8 +17,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Control de Asistencia | Contador de Faltas",
-  description: "Gestiona y monitorea tus faltas de asistencia de manera sencilla y elegante",
+  title: "Contador de Faltas | Control de Asistencia",
+  description:
+    "Gestiona y monitorea tus faltas y asistencia en cursos de forma sencilla y elegante.",
+  openGraph: {
+    title: "Contador de Faltas | Control de Asistencia",
+    description:
+      "Gestiona y monitorea tus faltas y asistencia en cursos de forma sencilla y elegante.",
+    url: "https://contador-faltas.app",
+    siteName: "Contador de Faltas",
+    images: [
+      {
+        url: "https://via.placeholder.com/1200x630.png?text=Contador+de+Faltas",
+        width: 1200,
+        height: 630,
+        alt: "Contador de Faltas - Control de asistencia",
+      },
+    ],
+    locale: "es_ES",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contador de Faltas | Control de Asistencia",
+    description:
+      "Gestiona y monitorea tus faltas y asistencia en cursos de forma sencilla y elegante.",
+    images: [
+      "https://via.placeholder.com/1200x630.png?text=Contador+de+Faltas",
+    ],
+  },
 };
 
 export default async function RootLayout({ children }) {

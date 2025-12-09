@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Book, BookOpen, ChevronDown, ChevronUp, Minus, Plus,
     Clock, AlertCircle, CheckCircle2, ArrowUpDown, ArrowUp, ArrowDown,
@@ -13,6 +13,9 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
     const [sortOrder, setSortOrder] = useState('asc');
     const [searchQuery, setSearchQuery] = useState('');
     const [notification, setNotification] = useState(null);
+    const [pendingRequests, setPendingRequests] = useState(0);
+    const [pendingDeltas, setPendingDeltas] = useState({});
+    const hadErrorRef = useRef(false);
 
     const listAsignaturas = asignaturas || [];
 
@@ -78,7 +81,27 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
         });
     }
 
-    const updateAbsenceInDb = async (moduleId, action, previousValue) => {
+    const refreshAbsencesFromServer = async () => {
+        try {
+            const response = await fetch('/api/absences');
+            const data = await response.json();
+            if (data.absences) {
+                setMemoria(data.absences);
+            }
+        } catch (error) {
+            console.error('Error al recargar faltas desde la BD:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (pendingRequests === 0 && hadErrorRef.current) {
+            refreshAbsencesFromServer();
+            hadErrorRef.current = false;
+        }
+    }, [pendingRequests]);
+
+    const updateAbsenceInDb = async (moduleId, action, deltaValue) => {
+        setPendingRequests(prev => prev + 1);
         try {
             const response = await fetch('/api/absences', {
                 method: 'POST',
@@ -89,21 +112,16 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
             });
             const data = await response.json();
             if (data.success) {
-                // Actualizar memoria con los nuevos datos de la BD
-                if (data.absences) {
-                    setMemoria(data.absences);
-                }
-                // Llamar al callback para recargar si es necesario
+                hadErrorRef.current = false;
+                setMemoria(prev => ({
+                    ...prev,
+                    [moduleId]: Math.max(0, (prev[moduleId] || 0) + deltaValue)
+                }));
                 if (onAbsenceChange) {
                     onAbsenceChange();
                 }
             } else {
-                // Revertir el cambio si hay error
-                setMemoria(prev => ({
-                    ...prev,
-                    [moduleId]: previousValue
-                }));
-                // Mostrar notificación de error
+                hadErrorRef.current = true;
                 setNotification({
                     message: action === 'add' 
                         ? 'No se pudo agregar la falta. Inténtalo de nuevo.' 
@@ -113,54 +131,54 @@ export default function Asignaturas({ memoria, setMemoria, theme, asignaturas, c
             }
         } catch (error) {
             console.error('Error de red al actualizar falta:', error);
-            // Revertir el cambio si hay error de red
-            setMemoria(prev => ({
-                ...prev,
-                [moduleId]: previousValue
-            }));
-            // Mostrar notificación de error
+            hadErrorRef.current = true;
             setNotification({
                 message: action === 'add' 
                     ? 'Error de conexión. No se pudo agregar la falta.' 
                     : 'Error de conexión. No se pudo quitar la falta.',
                 type: 'error'
             });
+        } finally {
+            setPendingRequests(prev => Math.max(0, prev - 1));
+            setPendingDeltas(prev => {
+                const next = { ...prev };
+                const current = next[moduleId] || 0;
+                const updated = current - deltaValue;
+                if (updated === 0) {
+                    delete next[moduleId];
+                } else {
+                    next[moduleId] = updated;
+                }
+                return next;
+            });
         }
     };
 
     const addFalta = (id) => {
-        // Guardar el valor anterior para poder revertir si hay error
-        const previousValue = memoria[id] || 0;
-        
-        // Actualización optimista: actualizar inmediatamente
-        setMemoria(prev => ({
+        const deltaValue = 1;
+        setPendingDeltas(prev => ({
             ...prev,
-            [id]: (prev[id] || 0) + 1
+            [id]: (prev[id] || 0) + deltaValue
         }));
-        
-        // Llamar a la API en segundo plano
-        updateAbsenceInDb(id, 'add', previousValue);
+        updateAbsenceInDb(id, 'add', deltaValue);
     }
 
     const removeFalta = (id) => {
-        const currentValue = memoria[id] || 0;
+        const currentValue = faltas(id);
         if (currentValue > 0) {
-            // Guardar el valor anterior para poder revertir si hay error
-            const previousValue = currentValue;
-            
-            // Actualización optimista: actualizar inmediatamente
-            setMemoria(prev => ({
+            const deltaValue = -1;
+            setPendingDeltas(prev => ({
                 ...prev,
-                [id]: Math.max(0, (prev[id] || 0) - 1)
+                [id]: (prev[id] || 0) + deltaValue
             }));
-            
-            // Llamar a la API en segundo plano
-            updateAbsenceInDb(id, 'remove', previousValue);
+            updateAbsenceInDb(id, 'remove', deltaValue);
         }
     }
 
     const faltas = (id) => {
-        return memoria[id] ? memoria[id] : 0;
+        const base = memoria[id] ? memoria[id] : 0;
+        const delta = pendingDeltas[id] || 0;
+        return Math.max(0, base + delta);
     }
 
     const maxFaltasPermitidas = (horas) => {

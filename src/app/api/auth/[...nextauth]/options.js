@@ -8,6 +8,10 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      httpOptions: {
+        // Evita timeouts rápidos en redes lentas
+        timeout: 15000,
+      },
       authorization: {
         params: {
           access_type: "offline",

@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS absence_log (
 
 -- Índices para mejorar rendimiento
 CREATE INDEX IF NOT EXISTS idx_modules_course_id ON modules(course_id);
-CREATE INDEX IF NOT EXISTS idx_enrollments_user_id ON enrollments(user_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_usuario_token ON enrollments(usuario_token);
 CREATE INDEX IF NOT EXISTS idx_enrollments_module_id ON enrollments(module_id);
 CREATE INDEX IF NOT EXISTS idx_absence_log_enrollment_id ON absence_log(enrollment_id);
 CREATE INDEX IF NOT EXISTS idx_absence_log_date ON absence_log(absence_date);
@@ -87,36 +87,52 @@ CREATE INDEX IF NOT EXISTS idx_absence_log_date ON absence_log(absence_date);
 -- Insertar Cursos
 INSERT OR IGNORE INTO courses (code, name, year_level) VALUES 
 ('DAM1', '1º DAM', 1), 
-('DAM2', '2º DAM', 2);
+('DAM2', '2º DAM', 2),
+('TELECOM1', '1º Sistemas de Telecomunicaciones e Informáticos', 1),
+('TELECOM2', '2º Sistemas de Telecomunicaciones e Informáticos', 2);
 
 -- Insertar módulos de 1º DAM
 INSERT OR IGNORE INTO modules (course_id, module_code, name, total_hours, weekly_hours, color) VALUES 
-(1, '0483', 'Sistemas informáticos', 167, 5, 'from-purple-500 via-indigo-500 to-blue-500'),
-(1, '0484', 'Bases de Datos', 200, 6, 'from-emerald-400 via-teal-500 to-cyan-500'),
-(1, '0485', 'Programación', 267, 8, 'from-amber-400 via-orange-500 to-red-500'),
-(1, '0373', 'Lenguajes de marcas y sistemas de gestión de información', 67, 2, 'from-rose-400 via-pink-500 to-fuchsia-500'),
-(1, '0487', 'Entornos de desarrollo', 100, 3, 'from-violet-500 via-purple-500 to-indigo-500'),
-(1, '1709', 'Itinerario personal para la empleabilidad I', 100, 3, 'from-blue-400 via-cyan-500 to-teal-500'),
-(1, '1665', 'Digitalización aplicada a los sectores productivos (GS)', 33, 1, 'from-cyan-400 via-blue-500 to-indigo-500'),
-(1, '0179', 'Inglés profesional', 67, 2, 'from-fuchsia-400 via-pink-500 to-rose-500');
+((SELECT id FROM courses WHERE code = 'DAM1'), '0483', 'Sistemas informáticos', 167, 5, 'from-purple-500 via-indigo-500 to-blue-500'),
+((SELECT id FROM courses WHERE code = 'DAM1'), '0484', 'Bases de Datos', 200, 6, 'from-emerald-400 via-teal-500 to-cyan-500'),
+((SELECT id FROM courses WHERE code = 'DAM1'), '0485', 'Programación', 267, 8, 'from-amber-400 via-orange-500 to-red-500'),
+((SELECT id FROM courses WHERE code = 'DAM1'), '0373', 'Lenguajes de marcas y sistemas de gestión de información', 67, 2, 'from-rose-400 via-pink-500 to-fuchsia-500'),
+((SELECT id FROM courses WHERE code = 'DAM1'), '0487', 'Entornos de desarrollo', 100, 3, 'from-violet-500 via-purple-500 to-indigo-500'),
+((SELECT id FROM courses WHERE code = 'DAM1'), '1709', 'Itinerario personal para la empleabilidad I', 100, 3, 'from-blue-400 via-cyan-500 to-teal-500'),
+((SELECT id FROM courses WHERE code = 'DAM1'), '1665', 'Digitalización aplicada a los sectores productivos (GS)', 33, 1, 'from-cyan-400 via-blue-500 to-indigo-500'),
+((SELECT id FROM courses WHERE code = 'DAM1'), '0179', 'Inglés profesional', 67, 2, 'from-fuchsia-400 via-pink-500 to-rose-500');
+
+-- Insertar módulos de 1º Sistemas de Telecomunicaciones e Informáticos
+INSERT OR IGNORE INTO modules (course_id, module_code, name, total_hours, weekly_hours, color) VALUES 
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '0525', 'Configuración de infraestructuras de sistemas de telecomunicaciones', 133, 4, 'from-purple-500 via-indigo-500 to-blue-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '0551', 'Elementos de sistemas de telecomunicaciones', 133, 4, 'from-emerald-400 via-teal-500 to-cyan-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '0552', 'Sistemas informáticos y redes locales', 133, 4, 'from-amber-400 via-orange-500 to-red-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '0554', 'Sistemas de producción audiovisual', 200, 6, 'from-rose-400 via-pink-500 to-fuchsia-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '0601', 'Gestión de proyectos de instalaciones de telecomunicaciones', 67, 2, 'from-violet-500 via-purple-500 to-indigo-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '0713', 'Sistemas de telefonía fija y móvil', 133, 4, 'from-blue-400 via-cyan-500 to-teal-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '1709', 'Itinerario personal para la empleabilidad I', 100, 3, 'from-cyan-400 via-blue-500 to-indigo-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '1665', 'Digitalización aplicada a los sectores productivos (GS)', 33, 1, 'from-fuchsia-400 via-pink-500 to-rose-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM1'), '0179', 'Inglés profesional', 67, 2, 'from-slate-500 via-slate-400 to-slate-300');
+
+-- Insertar módulos de 2º Sistemas de Telecomunicaciones e Informáticos
+INSERT OR IGNORE INTO modules (course_id, module_code, name, total_hours, weekly_hours, color) VALUES 
+((SELECT id FROM courses WHERE code = 'TELECOM2'), '0553', 'Técnicas y procesos en infraestructuras de telecomunicaciones', 133, 4, 'from-purple-500 via-indigo-500 to-blue-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM2'), '0555', 'Redes telemáticas', 233, 7, 'from-emerald-400 via-teal-500 to-cyan-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM2'), '0556', 'Sistemas de radiocomunicaciones', 200, 6, 'from-amber-400 via-orange-500 to-red-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM2'), '0557', 'Sistemas integrados y hogar digital', 167, 5, 'from-rose-400 via-pink-500 to-fuchsia-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM2'), '0558', 'Proyecto de sistemas de telecomunicaciones e informáticos', 67, 2, 'from-violet-500 via-purple-500 to-indigo-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM2'), '1710', 'Itinerario personal para la empleabilidad II', 67, 2, 'from-blue-400 via-cyan-500 to-teal-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM2'), '1708', 'Sostenibilidad aplicada al sistema productivo', 33, 1, 'from-cyan-400 via-blue-500 to-indigo-500'),
+((SELECT id FROM courses WHERE code = 'TELECOM2'), 'OPT', 'Módulo profesional optativo', 100, 3, 'from-slate-500 via-slate-400 to-slate-300');
 
 -- Insertar módulos de 2º DAM
 INSERT OR IGNORE INTO modules (course_id, module_code, name, total_hours, weekly_hours, color) VALUES 
-(2, '0486', 'Acceso a datos', 167, 5, 'from-sky-400 via-blue-500 to-indigo-500'),
-(2, '0488', 'Desarrollo de interfaces', 167, 5, 'from-emerald-500 via-green-500 to-teal-500'),
-(2, '0489', 'Programación multimedia y dispositivos móviles', 200, 6, 'from-amber-500 via-orange-500 to-red-500'),
-(2, '0490', 'Programación de servicios y procesos', 67, 2, 'from-rose-500 via-pink-500 to-fuchsia-500'),
-(2, '0491', 'Sistemas de gestión empresarial', 133, 4, 'from-indigo-500 via-violet-500 to-purple-500'),
-(2, '0492', 'Proyecto intermodular de desarrollo de aplicaciones multiplataforma', 67, 2, 'from-teal-500 via-emerald-500 to-green-500'),
-(2, '1710', 'Itinerario personal para la empleabilidad II', 67, 2, 'from-blue-500 via-sky-500 to-cyan-500'),
-(2, '1708', 'Sostenibilidad aplicada al sistema productivo', 33, 1, 'from-lime-500 via-green-500 to-emerald-500'),
-(2, 'OPT', 'Módulo profesional optativo', 100, 3, 'from-slate-500 via-slate-400 to-slate-300');
-
--- Insertar un alumno de prueba
-INSERT OR IGNORE INTO users (username, email) VALUES ('dev_student', 'alumno@dam.com');
-
--- Matricular al alumno de prueba en algunos módulos de 1º DAM
-INSERT OR IGNORE INTO enrollments (user_id, module_id, academic_year) VALUES 
-(1, 1, '2024-2025'), -- Programación
-(1, 2, '2024-2025'), -- Bases de Datos
-(1, 3, '2024-2025'); -- Sistemas informáticos
+((SELECT id FROM courses WHERE code = 'DAM2'), '0486', 'Acceso a datos', 167, 5, 'from-sky-400 via-blue-500 to-indigo-500'),
+((SELECT id FROM courses WHERE code = 'DAM2'), '0488', 'Desarrollo de interfaces', 167, 5, 'from-emerald-500 via-green-500 to-teal-500'),
+((SELECT id FROM courses WHERE code = 'DAM2'), '0489', 'Programación multimedia y dispositivos móviles', 200, 6, 'from-amber-500 via-orange-500 to-red-500'),
+((SELECT id FROM courses WHERE code = 'DAM2'), '0490', 'Programación de servicios y procesos', 67, 2, 'from-rose-500 via-pink-500 to-fuchsia-500'),
+((SELECT id FROM courses WHERE code = 'DAM2'), '0491', 'Sistemas de gestión empresarial', 133, 4, 'from-indigo-500 via-violet-500 to-purple-500'),
+((SELECT id FROM courses WHERE code = 'DAM2'), '0492', 'Proyecto intermodular de desarrollo de aplicaciones multiplataforma', 67, 2, 'from-teal-500 via-emerald-500 to-green-500'),
+((SELECT id FROM courses WHERE code = 'DAM2'), '1710', 'Itinerario personal para la empleabilidad II', 67, 2, 'from-blue-500 via-sky-500 to-cyan-500'),
+((SELECT id FROM courses WHERE code = 'DAM2'), '1708', 'Sostenibilidad aplicada al sistema productivo', 33, 1, 'from-lime-500 via-green-500 to-emerald-500'),
+((SELECT id FROM courses WHERE code = 'DAM2'), 'OPT', 'Módulo profesional optativo', 100, 3, 'from-slate-500 via-slate-400 to-slate-300');

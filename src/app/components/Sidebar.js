@@ -32,25 +32,23 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                 transform transition-all duration-300 ease-in-out
                 lg:translate-x-0 lg:static lg:z-auto lg:h-screen
                 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-                ${sidebarCollapsed ? 'lg:w-20 w-72' : 'w-72'}
+                ${sidebarCollapsed ? 'lg:w-20 w-64' : 'w-64'}
                 ${theme === 'dark' 
-                    ? 'bg-[#13131a] border-r border-white/8 backdrop-blur-xl backdrop-saturate-150' 
-                    : 'bg-white border-r border-gray-200 shadow-sm'
+                    ? 'bg-black border-r border-white/10' 
+                    : 'bg-white border-r border-black/10'
                 }
             `}>
-                <div className={`flex flex-col h-full ${sidebarCollapsed ? 'p-3' : 'p-4 sm:p-6'}`}>
+                <div className={`flex flex-col h-full ${sidebarCollapsed ? 'p-4' : 'p-6'}`}>
                     {/* Header */}
-                    <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} ${sidebarCollapsed ? 'mb-6' : 'mb-8'}`}>
+                    <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} ${sidebarCollapsed ? 'mb-8' : 'mb-8'}`}>
                         {!sidebarCollapsed && (
                             <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center ${
-                                    theme === 'dark' ? '' : 'shadow-md'
-                                }`}>
-                                    <Book className="w-5 h-5 text-white" />
+                                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
+                                    <Book className="w-5 h-5 text-black" />
                                 </div>
-                                <h2 className={`text-xl font-semibold ${
+                                <h2 className={`text-lg font-medium tracking-tight ${
                                     theme === 'dark' ? 'text-white' : 'text-gray-900'
-                                }`}>Control</h2>
+                                }`} style={{ fontSize: '1.125rem', fontWeight: 500 }}>Asistencia</h2>
                             </div>
                         )}
                         {onSidebarToggle && (
@@ -84,13 +82,13 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
 
                     {/* Botón Volver al menú principal */}
                     {cursoSeleccionado && (
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <button
                                 onClick={() => {
                                     onCursoChange(null);
                                     onClose();
                                 }}
-                                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2' : 'gap-2.5 px-4 py-2.5'} rounded-lg transition-all duration-200 text-sm ${
+                                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2' : 'gap-2 px-3 py-2'} rounded-lg transition-all duration-200 text-sm ${
                                     theme === 'dark'
                                         ? 'text-gray-400 hover:bg-white/5 hover:text-white'
                                         : 'text-gray-600 hover:bg-gray-100'
@@ -99,14 +97,14 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                             >
                                 <ArrowLeft className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
                                 {!sidebarCollapsed && (
-                                    <span className="font-medium">Volver al menú principal</span>
+                                    <span className="font-medium">Volver</span>
                                 )}
                             </button>
                         </div>
                     )}
 
                     {/* Navigation */}
-                    <nav className="flex-1 space-y-2 mb-6 overflow-y-auto">
+                    <nav className="flex-1 space-y-2 mb-8 overflow-y-auto">
                         {menuItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = currentView === item.id && cursoSeleccionado;
@@ -122,26 +120,25 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                                     }}
                                     disabled={!cursoSeleccionado}
                                     className={`
-                                        w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2' : 'gap-3 px-4 py-3'} rounded-xl
+                                        w-full flex items-center ${sidebarCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'} rounded-lg
                                         transition-all duration-200
                                         ${!cursoSeleccionado 
-                                            ? theme === 'dark'
-                                                ? 'opacity-50 cursor-not-allowed text-gray-400'
-                                                : 'opacity-50 cursor-not-allowed text-gray-400'
+                                            ? 'opacity-30 cursor-not-allowed text-white/40'
                                             : isActive 
                                                 ? theme === 'dark'
-                                                    ? 'bg-white/10 text-white shadow-lg'
-                                                    : 'bg-blue-500 text-white shadow-lg'
+                                                    ? 'bg-white text-black'
+                                                    : 'bg-black text-white'
                                                 : theme === 'dark'
-                                                    ? 'text-gray-400 hover:bg-white/5 hover:text-white'
-                                                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                                                    ? 'text-white/60 hover:bg-white/[0.06] hover:text-white'
+                                                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                         }
                                     `}
                                     title={sidebarCollapsed ? item.label : ''}
+                                    style={{ minHeight: '40px' }}
                                 >
                                     <Icon className="w-5 h-5" />
                                     {!sidebarCollapsed && (
-                                        <span className="font-medium">{item.label}</span>
+                                        <span className="font-medium text-sm">{item.label}</span>
                                     )}
                                 </button>
                             );
@@ -149,72 +146,53 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                     </nav>
 
                     {/* Settings Section */}
-                    <div className={`border-t pt-6 space-y-2 ${
-                        theme === 'dark' ? 'border-white/10' : 'border-gray-200'
-                    }`}>
+                    <div className="border-t pt-6 space-y-3 border-white/10">
                         {/* Theme Toggle */}
                         <button
                             onClick={onThemeChange}
-                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2' : 'justify-between px-4 py-3'} rounded-xl transition-colors group ${
+                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'} rounded-lg transition-all ${
                                 theme === 'dark'
-                                    ? 'bg-white/5 hover:bg-white/10'
+                                    ? 'bg-white/[0.06] hover:bg-white/[0.08]'
                                     : 'bg-gray-100 hover:bg-gray-200'
                             }`}
-                            title={sidebarCollapsed ? (theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro') : ''}
+                            style={{ minHeight: '40px' }}
+                            title={sidebarCollapsed ? (theme === 'dark' ? 'Modo claro' : 'Modo oscuro') : ''}
                         >
-                            <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-3'}`}>
-                                {theme === 'dark' ? (
-                                    <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400 group-hover:text-white' : 'text-gray-600 group-hover:text-gray-900'}`} />
-                                ) : (
-                                    <Sun className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400 group-hover:text-white' : 'text-gray-600 group-hover:text-gray-900'}`} />
-                                )}
-                                {!sidebarCollapsed && (
-                                    <span className={`font-medium ${
-                                        theme === 'dark' ? 'text-gray-400 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'
-                                    }`}>
-                                        {theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro'}
-                                    </span>
-                                )}
-                            </div>
+                            {theme === 'dark' ? (
+                                <Sun className="w-5 h-5 text-white" />
+                            ) : (
+                                <Moon className="w-5 h-5 text-gray-900" />
+                            )}
                             {!sidebarCollapsed && (
-                                <div className={`
-                                    w-12 h-6 rounded-full p-1 transition-colors
-                                    ${theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}
-                                `}>
-                                    <div className={`
-                                        w-4 h-4 rounded-full bg-white transition-transform
-                                        ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}
-                                    `} />
-                                </div>
+                                <span className="font-medium text-sm text-white">
+                                    {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+                                </span>
                             )}
                         </button>
 
                         {/* Profile */}
                         <button 
-                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2' : 'gap-3 px-4 py-3'} rounded-xl transition-colors ${
+                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'} rounded-lg transition-colors ${
                                 theme === 'dark'
-                                    ? 'bg-white/5 hover:bg-white/10'
+                                    ? 'bg-white/[0.06] hover:bg-white/[0.08]'
                                     : 'bg-gray-100 hover:bg-gray-200'
                             }`}
+                            style={{ minHeight: '40px' }}
                             title={sidebarCollapsed ? userName : ''}
                         >
                             {userImage ? (
                                 <img 
                                     src={userImage} 
                                     alt={userName}
-                                    className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-8 h-8'} rounded-full object-cover border-2 ${
-                                        theme === 'dark' ? 'border-white/20' : 'border-gray-300'
-                                    }`}
+                                    className="w-8 h-8 rounded-full object-cover"
                                 />
                             ) : (
-                                <div className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-8 h-8'} rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center`}>
-                                    <User className="w-4 h-4 text-white" />
+                                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                                    <User className="w-4 h-4 text-black" />
                                 </div>
                             )}
                             {!sidebarCollapsed && (
-                                <span className={`font-medium truncate flex-1 text-left ${
-                                    theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-700 hover:text-gray-900'
-                                }`}>
+                                <span className="font-medium text-sm truncate flex-1 text-left text-white">
                                     {userName}
                                 </span>
                             )}
@@ -223,20 +201,17 @@ export default function Sidebar({ isOpen, onClose, theme, onThemeChange, current
                         {/* Logout */}
                         <button 
                             onClick={() => signOut({ callbackUrl: '/login' })}
-                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2' : 'gap-3 px-4 py-3'} rounded-xl transition-colors group ${
+                            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'} rounded-lg transition-colors ${
                                 theme === 'dark'
-                                    ? 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/30'
-                                    : 'bg-red-50 hover:bg-red-100 border border-red-200'
+                                    ? 'bg-red-500/10 hover:bg-red-500/20'
+                                    : 'bg-red-50 hover:bg-red-100'
                             }`}
+                            style={{ minHeight: '40px' }}
                             title={sidebarCollapsed ? 'Cerrar Sesión' : ''}
                         >
-                            <LogOut className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-5 h-5'} ${
-                                theme === 'dark' ? 'text-red-400 group-hover:text-red-300' : 'text-red-600 group-hover:text-red-700'
-                            }`} />
+                            <LogOut className="w-5 h-5 text-red-500" />
                             {!sidebarCollapsed && (
-                                <span className={`font-medium ${
-                                    theme === 'dark' ? 'text-red-400 group-hover:text-red-300' : 'text-red-600 group-hover:text-red-700'
-                                }`}>Cerrar Sesión</span>
+                                <span className="font-medium text-sm text-red-500">Cerrar Sesión</span>
                             )}
                         </button>
                     </div>

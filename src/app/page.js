@@ -199,12 +199,12 @@ export default function Home() {
                     </div>
                   </div>
                 ) : (
-                  <div className="max-w-4xl mx-auto w-full">
-                    <header className="mb-6 sm:mb-8">
-                      <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-semibold mb-2 ${
+                  <div className="max-w-3xl mx-auto w-full">
+                    <header className="mb-6">
+                      <h1 className={`text-2xl font-medium mb-1 ${
                         theme === 'dark' ? 'text-white' : 'text-gray-900'
                       }`}>Selecciona un curso</h1>
-                      <p className={`text-xs sm:text-sm lg:text-base ${
+                      <p className={`text-sm ${
                         theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                       }`}>
                         Elige el curso sobre el que quieres gestionar la asistencia.
@@ -212,31 +212,31 @@ export default function Home() {
                     </header>
                     
                     {/* Lista de cursos */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {cursos.map((curso) => (
                         <button
                           key={curso.id}
                           type="button"
                           onClick={() => setCursoSeleccionado(curso.id)}
-                          className={`w-full rounded-xl px-4 sm:px-6 py-4 sm:py-5 text-left transition-all border group ${
+                          className={`w-full rounded-lg px-4 py-3 text-left transition-all border group ${
                             theme === 'dark'
-                              ? 'glass-card hover:bg-white/[0.08] border-white/10 hover:border-white/20'
-                              : 'bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300 shadow-sm'
+                              ? 'glass-card hover:bg-white/[0.06] border-white/10 hover:border-white/15'
+                              : 'bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300'
                           }`}
                         >
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                          <div className="flex items-center justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                              <h2 className={`text-lg sm:text-xl font-semibold mb-2 ${
+                              <h2 className={`text-base font-medium mb-1 ${
                                 theme === 'dark' ? 'text-white' : 'text-gray-900'
                               }`}>
                                 {curso.nombre}
                               </h2>
-                              <p className={`text-xs sm:text-sm mb-3 line-clamp-2 ${
+                              <p className={`text-xs mb-2 line-clamp-1 ${
                                 theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                               }`}>
                                 {curso.descripcion}
                               </p>
-                              <div className={`flex flex-wrap items-center gap-3 sm:gap-4 text-xs ${
+                              <div className={`flex items-center gap-3 text-xs ${
                                 theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
                               }`}>
                                 <span className="flex items-center gap-1.5">

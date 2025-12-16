@@ -252,6 +252,26 @@ export async function addAbsence(usuarioToken, moduleId) {
   try {
     await ensureEnrollmentsStructure();
     
+    // Verificar que el usuario existe
+    const userCheck = await turso.execute(`
+      SELECT token FROM Usuario WHERE token = ?
+    `, [usuarioToken]);
+    
+    if (userCheck.rows.length === 0) {
+      console.error("Error: Usuario con token no encontrado:", usuarioToken);
+      return false;
+    }
+    
+    // Verificar que el módulo existe
+    const moduleCheck = await turso.execute(`
+      SELECT id FROM modules WHERE id = ?
+    `, [moduleId]);
+    
+    if (moduleCheck.rows.length === 0) {
+      console.error("Error: Módulo no encontrado:", moduleId);
+      return false;
+    }
+    
     // Verificar si existe el enrollment
     let { rows } = await turso.execute(`
       SELECT id, current_absences 
